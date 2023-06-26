@@ -4,13 +4,6 @@
 #include <iostream>
 
 int main(void) {
-  Sudoku game = Sudoku(2);
-  game.new_game(10);
-
-  game.play();
-
-  return 0;
-
   using namespace ftxui;
 
   // Define the document

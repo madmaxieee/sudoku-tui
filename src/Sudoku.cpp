@@ -4,6 +4,7 @@
 #include <ctime>
 #include <functional>
 #include <iostream>
+#include <sstream>
 #include <unordered_set>
 #include <vector>
 
@@ -30,10 +31,16 @@ void Sudoku::reset() {
 }
 
 void Sudoku::print() const {
+  ostringstream border_oss;
+  for (size_t r = 0; r < (_size * 2 - 1) * _size + 3 * (_size - 1); ++r) {
+    border_oss << "-";
+  }
+  string border = border_oss.str();
+
   cout << "Board:" << endl;
   for (size_t r = 0; r < _size2; ++r) {
     if (r % _size == 0 && r != 0) {
-      cout << "---------------------" << endl;
+      cout << border << endl;
     }
     for (size_t c = 0; c < _size2; ++c) {
       if (c % _size == 0 && c != 0) {
