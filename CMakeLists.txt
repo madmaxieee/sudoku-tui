@@ -23,7 +23,8 @@ project(sudoku-tui
   VERSION 1.0.0
 )
  
-add_executable(sudoku-tui src/main.cpp)
+file(GLOB_RECURSE SOURCES RELATIVE ${CMAKE_SOURCE_DIR} "src/*.cpp" "src/*.hpp")
+add_executable(sudoku-tui ${SOURCES})
 target_include_directories(sudoku-tui PRIVATE src)
  
 target_link_libraries(sudoku-tui

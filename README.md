@@ -9,6 +9,5 @@ To setup clangd, run the following command:
 
 To build and run the project, run the following command:
 ```bash
-./run.sh
+./build.sh
 ```
-
