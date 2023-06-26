@@ -4,10 +4,10 @@
 #include <iostream>
 
 int main(void) {
-  Sudoku game = Sudoku(3);
+  Sudoku game = Sudoku(2);
   game.new_game(10);
 
-  game.print();
+  game.play();
 
   return 0;
 

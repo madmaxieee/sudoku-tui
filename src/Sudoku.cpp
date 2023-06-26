@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstddef>
 #include <cstdlib>
 #include <ctime>
@@ -30,9 +31,15 @@ void Sudoku::reset() {
 
 void Sudoku::print() const {
   cout << "Board:" << endl;
-  for (auto &row : _board) {
-    for (auto &n : row) {
-      cout << n << ' ';
+  for (size_t r = 0; r < _size2; ++r) {
+    if (r % _size == 0 && r != 0) {
+      cout << "---------------------" << endl;
+    }
+    for (size_t c = 0; c < _size2; ++c) {
+      if (c % _size == 0 && c != 0) {
+        cout << "| ";
+      }
+      cout << _board[r][c] << " ";
     }
     cout << endl;
   }
@@ -40,6 +47,8 @@ void Sudoku::print() const {
 }
 
 void Sudoku::new_game(size_t cells_given) {
+  assert(cells_given <= _size2 * _size2 && "Too many cells given");
+
   auto random = [&]() { return rand() % _size2; };
 
   auto _new_game = [&]() {
@@ -115,11 +124,11 @@ void Sudoku::check_invalid() {
   unordered_set<size_t> box_invalid_to_remove;
   for (auto &b : box_invalid) {
     _box_flags[b] = 0;
-    size_t row = b / 3 * 3;
-    size_t col = b % 3 * 3;
+    size_t row = b / _size * _size;
+    size_t col = b % _size * _size;
     bool valid = true;
-    for (size_t r = row; r < row + 3; ++r) {
-      for (size_t c = col; c < col + 3; ++c) {
+    for (size_t r = row; r < row + _size; ++r) {
+      for (size_t c = col; c < col + _size; ++c) {
         size_t flag = (1 << _board[r][c]) >> 1;
         if (flag & _box_flags[b]) {
           _state = INVALID;
@@ -152,7 +161,7 @@ void Sudoku::place_number(Coord coord, size_t num) {
 
   _row_flags[row] ^= orig_flag;
   _col_flags[col] ^= orig_flag;
-  _box_flags[row / 3 * 3 + col / 3] ^= orig_flag;
+  _box_flags[row / _size * _size + col / _size] ^= orig_flag;
 
   auto &[row_invalid, col_invalid, box_invalid] = _invalid_groups;
   if (_row_flags[row] & num_flag) {
@@ -163,14 +172,14 @@ void Sudoku::place_number(Coord coord, size_t num) {
     _state = INVALID;
     col_invalid.insert(col);
   }
-  if (_box_flags[row / 3 * 3 + col / 3] & num_flag) {
+  if (_box_flags[row / _size * _size + col / _size] & num_flag) {
     _state = INVALID;
-    box_invalid.insert(row / 3 * 3 + col / 3);
+    box_invalid.insert(row / _size * _size + col / _size);
   }
 
   _row_flags[row] |= num_flag;
   _col_flags[col] |= num_flag;
-  _box_flags[row / 3 * 3 + col / 3] |= num_flag;
+  _box_flags[row / _size * _size + col / _size] |= num_flag;
 }
 
 void Sudoku::check_finished() {
@@ -220,7 +229,7 @@ bool Sudoku::solve() {
         size_t num_flag = (1 << num) >> 1;
         _row_flags[row] |= num_flag;
         _col_flags[col] |= num_flag;
-        _box_flags[row / 3 * 3 + col / 3] |= num_flag;
+        _box_flags[row / _size * _size + col / _size] |= num_flag;
       } else {
         _board[row][col] = 0;
       }
@@ -242,7 +251,7 @@ bool Sudoku::_solve(size_t cursor) {
     return _solve(cursor + 1);
   }
 
-  for (size_t n = 1; n <= 9; n++) {
+  for (size_t n = 1; n <= _size2; n++) {
     place_number({row, col}, n);
     if (is_invalid()) {
       continue;
@@ -253,4 +262,39 @@ bool Sudoku::_solve(size_t cursor) {
   }
   place_number({row, col}, 0);
   return false;
+};
+
+void Sudoku::play() {
+  auto get_input = [&](string prompt, size_t min, size_t max) {
+    while (true) {
+      cout << prompt;
+      string input;
+      cin >> input;
+      // try to convert to size_t
+      try {
+        size_t num = stoul(input);
+        if (num > max || num < min) {
+          throw invalid_argument("invalid input");
+        }
+        return num;
+      } catch (invalid_argument &e) {
+        cerr << "Error: invalid input. Expected a number between 1 and 9. Got "
+             << input << "." << endl;
+      }
+    }
+  };
+
+  while (!is_finished()) {
+    print();
+    size_t row = get_input("Enter row: ", 1, _size2) - 1;
+    size_t col = get_input("Enter column: ", 1, _size2) - 1;
+    size_t num = get_input("Enter number (enter 0) to clear: ", 0, _size2);
+    if (_is_given[row][col]) {
+      cerr << "Error: cannot change given number." << endl;
+      continue;
+    }
+    place_number({row, col}, num);
+  }
+
+  cout << "Congratulations! You solved the puzzle!" << endl;
 };
