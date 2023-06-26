@@ -33,7 +33,7 @@ void Sudoku::reset() {
 void Sudoku::print() const {
   ostringstream border_oss;
   for (size_t r = 0; r < (_size * 2 - 1) * _size + 3 * (_size - 1); ++r) {
-    border_oss << "-";
+    border_oss << '-';
   }
   string border = border_oss.str();
 
@@ -46,7 +46,13 @@ void Sudoku::print() const {
       if (c % _size == 0 && c != 0) {
         cout << "| ";
       }
-      cout << _board[r][c] << " ";
+      if (_is_given[r][c]) {
+        // red
+        cout << "\x1B[31m" << _board[r][c] << " "
+             << "\033[0m";
+      } else {
+        cout << _board[r][c] << " ";
+      }
     }
     cout << endl;
   }
