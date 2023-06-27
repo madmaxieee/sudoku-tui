@@ -3,10 +3,17 @@
 #include <cstdlib>
 #include <ctime>
 #include <fmt/color.h>
+#include <fmt/format.h>
+#include <ftxui/component/component.hpp> // for Button, Vertical, Renderer, Horizontal, operator|
+#include <ftxui/component/component_base.hpp>     // for Component
+#include <ftxui/component/component_options.hpp>  // for ButtonOption
+#include <ftxui/component/screen_interactive.hpp> // for ScreenInteractive
 #include <functional>
 #include <iostream>
 #include <sstream>
+#include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "Sudoku.hpp"
@@ -22,6 +29,7 @@ Sudoku::Sudoku(size_t n) {
 
 void Sudoku::reset() {
   _board = vector<vector<size_t>>(_size2, vector<size_t>(_size2, 0));
+  _labels = vector<vector<string>>(_size2, vector<string>(_size2, ""));
   _is_given = vector<vector<bool>>(_size2, vector<bool>(_size2, false));
   _is_ready = false;
   _state = UNSURE;
@@ -167,6 +175,7 @@ void Sudoku::place_number(Coord coord, size_t num) {
   size_t num_flag = (1 << num) >> 1;
 
   _board[row][col] = num;
+  _labels[row][col] = num == 0 ? "+" : fmt::format("{}", num);
 
   if (_state == FINISHED) {
     _state = UNSURE;
@@ -244,7 +253,8 @@ bool Sudoku::solve() {
         _col_flags[col] |= num_flag;
         _box_flags[row / _size * _size + col / _size] |= num_flag;
       } else {
-        _board[row][col] = 0;
+        // _board[row][col] = 0;
+        place_number({row, col}, 0);
       }
     }
   }
@@ -315,13 +325,69 @@ void Sudoku::play_text() {
 void Sudoku::play_tui() {
   using namespace ftxui;
 
-  // auto cell = [](size_t n) { return text(n); };
-  // Define the document
-  Element document = gridbox({});
+  Coord cursor = make_pair(0, 0);
+  size_t count = 0;
 
-  auto screen = Screen::Create(Dimension::Full(),       // Width
-                               Dimension::Fit(document) // Height
-  );
-  Render(screen, document);
-  screen.Print();
+  auto cell = [&](size_t r, size_t c) {
+    size_t num = _board[r][c];
+    auto button = Button(
+        &_labels[r][c], [&cursor, r, c] { cursor = make_pair(r, c); },
+        ButtonOption::Ascii());
+    if (_is_given[r][c]) {
+      return button | color(Color::Red1);
+    } else {
+      return button;
+    }
+  };
+
+  vector<Component> board_content;
+  for (size_t r = 0; r < _size2; ++r) {
+    if (r % _size == 0 && r != 0) {
+      board_content.push_back(Renderer([] { return separator(); }));
+    }
+    vector<Component> row_content;
+    for (size_t c = 0; c < _size2; ++c) {
+      if (c % _size == 0 && c != 0) {
+        row_content.push_back(Renderer([] { return separator(); }));
+      }
+      row_content.push_back(cell(r, c));
+    }
+    board_content.push_back(Container::Horizontal(row_content));
+  }
+  Component board = Container::Vertical(board_content) | border;
+
+  auto num_button = [&](size_t n) {
+    return Button(
+               fmt::format("{}", n),
+               [n, &cursor, this] {
+                 auto [r, c] = cursor;
+                 if (!this->_is_given[r][c])
+                   this->place_number(cursor, n);
+               },
+               ButtonOption::Ascii()) |
+           border;
+  };
+  auto clear_button = Button(
+                          "clear",
+                          [&cursor, this] {
+                            auto [r, c] = cursor;
+                            if (!this->_is_given[r][c])
+                              this->place_number(cursor, 0);
+                          },
+                          ButtonOption::Ascii()) |
+                      hcenter | border;
+
+  vector<Component> numpad_content;
+  for (size_t i = 0; i < _size; i++) {
+    vector<Component> numpad_row_content;
+    for (size_t j = 0; j < _size; j++) {
+      numpad_row_content.push_back(num_button(i * _size + j + 1));
+    }
+    numpad_content.push_back(Container::Horizontal(numpad_row_content));
+  }
+  numpad_content.push_back(clear_button);
+  Component numpad = Container::Vertical(numpad_content);
+
+  auto screen = ScreenInteractive::FitComponent();
+  screen.Loop(Container::Horizontal({board, numpad | vcenter}));
 }

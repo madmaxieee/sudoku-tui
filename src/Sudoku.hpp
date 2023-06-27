@@ -1,13 +1,11 @@
 #ifndef _SUDOKU_H_
 #define _SUDOKU_H_
 
-#include <ftxui/dom/elements.hpp>
 #include <iostream>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
-using namespace ftxui;
 using namespace std;
 
 typedef vector<vector<size_t>> Board;
@@ -40,7 +38,6 @@ public:
   }
 
 private:
-  Element _document;
   Board _board;
   Board _solution;
   vector<vector<bool>> _is_given;
@@ -56,6 +53,8 @@ private:
   // invalid groups, (row, col, box)
   tuple<unordered_set<size_t>, unordered_set<size_t>, unordered_set<size_t>>
       _invalid_groups;
+  // for display
+  vector<vector<string>> _labels;
 
   void place_number(Coord coord, size_t num);
   void check_invalid();
