@@ -1,4 +1,5 @@
 #include <cassert>
+#include <chrono>
 #include <cstddef>
 #include <cstdlib>
 #include <ctime>
@@ -367,15 +368,15 @@ void Sudoku::play_tui() {
                ButtonOption::Ascii()) |
            border;
   };
-  auto clear_button = Button(
-                          "clear",
-                          [&cursor, this] {
-                            auto [r, c] = cursor;
-                            if (!this->_is_given[r][c])
-                              this->place_number(cursor, 0);
-                          },
-                          ButtonOption::Ascii()) |
-                      hcenter | border;
+  Component clear_button = Button(
+                               "clear",
+                               [&cursor, this] {
+                                 auto [r, c] = cursor;
+                                 if (!this->_is_given[r][c])
+                                   this->place_number(cursor, 0);
+                               },
+                               ButtonOption::Ascii()) |
+                           hcenter | border;
 
   vector<Component> numpad_content;
   for (size_t i = 0; i < _size; i++) {
@@ -388,6 +389,16 @@ void Sudoku::play_tui() {
   numpad_content.push_back(clear_button);
   Component numpad = Container::Vertical(numpad_content);
 
+  Component win_window =
+      Renderer([&] {
+        return window(text("You won!"),
+                      text("Congratulations, You solved the puzzle!"));
+      }) |
+      Maybe([this] { return this->is_finished(); });
+
   auto screen = ScreenInteractive::FitComponent();
-  screen.Loop(Container::Horizontal({board, numpad | vcenter}));
+  screen.Loop(Container::Vertical({
+      Container::Horizontal({board, numpad | vcenter}),
+      win_window,
+  }));
 }
