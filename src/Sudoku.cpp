@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <ctime>
+#include <fmt/color.h>
 #include <functional>
 #include <iostream>
 #include <sstream>
@@ -32,6 +33,7 @@ void Sudoku::reset() {
 
 void Sudoku::print() const {
   ostringstream border_oss;
+  border_oss << ' ';
   for (size_t r = 0; r < (_size * 2 - 1) * _size + 3 * (_size - 1); ++r) {
     border_oss << '-';
   }
@@ -44,14 +46,12 @@ void Sudoku::print() const {
     }
     for (size_t c = 0; c < _size2; ++c) {
       if (c % _size == 0 && c != 0) {
-        cout << "| ";
+        cout << " |";
       }
       if (_is_given[r][c]) {
-        // red
-        cout << "\x1B[31m" << _board[r][c] << " "
-             << "\033[0m";
+        fmt::print(fg(fmt::color::red), "{:2d}", _board[r][c]);
       } else {
-        cout << _board[r][c] << " ";
+        fmt::print("{:2d}", _board[r][c]);
       }
     }
     cout << endl;
@@ -277,7 +277,7 @@ bool Sudoku::_solve(size_t cursor) {
   return false;
 };
 
-void Sudoku::play() {
+void Sudoku::play_text() {
   auto get_input = [&](string prompt, size_t min, size_t max) {
     while (true) {
       cout << prompt;
@@ -311,3 +311,17 @@ void Sudoku::play() {
 
   cout << "Congratulations! You solved the puzzle!" << endl;
 };
+
+void Sudoku::play_tui() {
+  using namespace ftxui;
+
+  // auto cell = [](size_t n) { return text(n); };
+  // Define the document
+  Element document = gridbox({});
+
+  auto screen = Screen::Create(Dimension::Full(),       // Width
+                               Dimension::Fit(document) // Height
+  );
+  Render(screen, document);
+  screen.Print();
+}

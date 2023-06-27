@@ -26,7 +26,8 @@ public:
   // n is the size of the sudoku board
   Sudoku(size_t n);
   void print() const;
-  void play();
+  void play_text();
+  void play_tui();
   void reset();
   void new_game(size_t cells_given);
   bool is_finished() {
